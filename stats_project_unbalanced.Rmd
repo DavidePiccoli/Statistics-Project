@@ -1,0 +1,106 @@
+---
+title: "Statistics Project"
+output: html_notebook
+---
+
+
+```{r}
+# Load required packages
+library(dplyr)
+```
+```{r}
+# Generate example data
+#set.seed(799)  # to keep same values for later runs
+
+```
+```{r}
+# Survey answers (4 possible answers: A, B, C, D)
+answers <- c("A", "B", "C", "D")
+```
+```{r}
+# Generate artificial probabilities
+#random_probs <- runif(length(answers)) for random probs
+probs <- c(0.85, 0.6, 0.35, 0.1)
+
+# Normalize the probabilities so they sum to 1
+#random_probs1 <- random_probs1 / sum(random_probs1)
+#random_probs2 <- random_probs2 / sum(random_probs2)
+```
+
+```{r}
+# Generate answers for those who witnessed a natural disaster
+n_hurricane <- 902
+answers_hurricane <- sample(answers, n_hurricane, replace = TRUE, prob = probs)
+```
+
+```{r}
+# Generate answers for those who did not witness a natural disaster
+n_no_hurricane <- 4689
+answers_no_hurricane <- sample(answers, n_no_hurricane, replace = TRUE, prob = rev(probs))
+
+```
+
+```{r}
+# Compute answers frequency
+freq_hurricane <- table(answers_hurricane)
+freq_no_hurricane <- table(answers_no_hurricane)
+```
+```{r}
+# Convert frequencies to cumulative distributions
+cdf_hurricane <- cumsum(freq_hurricane) / n_hurricane
+cdf_no_hurricane <- cumsum(freq_no_hurricane) / n_no_hurricane
+```
+
+```{r}
+# Kolmogorov-Smirnov test
+ks_test <- ks.test(freq_hurricane, cdf_no_hurricane)
+print(ks_test)
+```
+```{r}
+# Chi-square test
+chi_square_test <- chisq.test(freq_hurricane, freq_no_hurricane)
+print(chi_square_test)
+```
+```{r}
+## Considering a significance level of alpha=0.05, KS test rejects the null hypothesis of equality between the two distributions (treatment group and control group), while Chi-square test does not reject the null hypothesis.
+```
+```{r}
+# Join answers C and D to make the distribution more skewed
+answers_skewed <- c("A", "B", "CD")
+```
+```{r}
+# Function to join the two answers
+join_answers <- function(answers) {
+  answers <- as.character(answers)
+  answers[answers == "C" | answers == "D"] <- "CD"
+  return(answers)
+}
+```
+```{r}
+answers_hurricane_skewed <- join_answers(answers_hurricane)
+answers_no_hurricane_skewed <- join_answers(answers_no_hurricane)
+```
+```{r}
+# Compute new answers frequencies
+freq_hurricane_skewed <- table(answers_hurricane_skewed)
+freq_no_hurricane_skewed <- table(answers_no_hurricane_skewed)
+```
+```{r}
+#  Convert frequencies to cumulative distributions
+cdf_hurricane_skewed <- cumsum(freq_hurricane_skewed) / n_hurricane
+cdf_no_hurricane_skewed <- cumsum(freq_no_hurricane_skewed) / n_no_hurricane
+```
+```{r}
+# Kolmogorov-Smirnov test on skewed distributions
+ks_test_skewed <- ks.test(freq_hurricane_skewed, cdf_no_hurricane_skewed)
+print(ks_test_skewed)
+```
+```{r}
+# Chi-square test on skewed distributions
+chi_square_test_skewed <- chisq.test(freq_hurricane_skewed, freq_no_hurricane_skewed)
+print(chi_square_test_skewed)
+```
+```{r}
+## Now that the distributions are skewed both tests does not reject the null hypothesis of equality between them for a significance level of alpha=0.05. Considering a significance level of alpha=0.1, KS test might reject it, while Chi-square still doesn't.
+
+```
