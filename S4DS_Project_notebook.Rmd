@@ -411,7 +411,7 @@ legend("bottomright", legend = c("Distribution 1", "Distribution 2"), lty = c(2,
 
 ```
 
-# TABLE 2 
+# TABLE 2
 
 ## Definition of the functions
 
@@ -734,7 +734,7 @@ print(ks_p_value)
 p = ecdf(x_bin)
 
 # Plot empirical cumulative distribution function
-plot(p, lty=2, main='Different distribution by design (uniform)', xlim=c(1, bins+1))
+plot(p, lty=2, main='Different distribution by design (right skewed)', xlim=c(1, bins+1))
 
 # Add another distribuition
 p_2 = ecdf(y_bin)
