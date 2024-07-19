@@ -1,0 +1,733 @@
+# Comparing Discrete Distributions: Survey Validation and Survey Experiments
+
+# Install the package 
+if (!require(KScorrect)) {
+  install.packages("KScorrect")
+}
+
+# Load the package
+library(KScorrect)
+
+# Binning as in the paper
+four_categories <- function(x) {
+  y_i <- x
+  
+  Y_C_four_categories <- ifelse(y_i <= 2, 1,
+                                ifelse(y_i > 2 & y_i <= 3, 2,
+                                       ifelse(y_i > 3 & y_i <= 4, 3, 4)))
+  
+  return(Y_C_four_categories)
+}
+
+ten_categories <- function(x) {
+  y_i <- x
+  
+  Y_C_ten_categories <- ifelse(y_i <= 1, 1,
+                        ifelse(y_i > 1 & y_i <= 2, 2,
+                        ifelse(y_i > 2 & y_i <= 2.5, 3,
+                        ifelse(y_i > 2.5 & y_i <= 3, 4,
+                        ifelse(y_i > 3 & y_i <= 3.5, 5,
+                        ifelse(y_i > 3.5 & y_i <= 4, 6,
+                        ifelse(y_i > 4 & y_i <= 4.5, 7,
+                        ifelse(y_i > 4.5 & y_i <= 5, 8,
+                        ifelse(y_i > 5 & y_i <= 5.5, 9, 10)))))))))
+  
+  return(Y_C_ten_categories)
+}
+
+# Table 1
+# Define the discrete KS test function
+discrete_ks_test <- function(x, y, bins) {
+  # binning
+  if (bins == 4) {
+    x_bin <- four_categories(x)
+    y_bin <- four_categories(y)
+  } else if (bins == 10) {
+    x_bin <- ten_categories(x)
+    y_bin <- ten_categories(y)
+  }
+  
+  ks_stat <- ks.test(x_bin, y_bin)
+  
+  return(ks_stat)
+}
+
+# Function to perform the chi-square test
+chi_square_test <- function(x, y, bins) {
+  
+  # Binning
+  if (bins == 4) {
+    x_bin <- four_categories(x)
+    y_bin <- four_categories(y)
+  } else if (bins == 10) {
+    x_bin <- ten_categories(x)
+    y_bin <- ten_categories(y)
+  }
+  
+  # Contingency table
+  table <- table(x_bin, y_bin)
+  
+  # We add a small constant to avoid division by zero
+  table <- table + 1e-5
+  
+  # Chi-square test
+  chi_sq_result <- chisq.test(table)
+  
+  return(chi_sq_result)
+}
+
+
+# Function to run Monte Carlo simulations
+run_simulation <- function(n, dist_shape, bins) {
+  # Initialize counters for null hypothesis rejections
+  count_ks_reject <- 0
+  count_chi_sq_reject <- 0
+  
+  # Run the simulations
+  for (i in 1:1000) {
+    x_i1 <- 3*runif(n, 0, 1) + 1
+    x_i2 <- 2*runif(n, 0, 1) - 1
+    e_i <- qnorm(runif(n, 0, 1))
+    
+    # Generate data according to specified distribution shape
+    if (dist_shape == "right skewed") {
+      # Set the coefficients
+      beta1 <- 0.80
+      beta2 <- 0.75
+      sigma <- 1
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+    } else if (dist_shape == "left skewed") {
+      # Set the coefficients
+      beta1 <- 1.70
+      beta2 <- 1.75
+      sigma <- 1
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+    } else if (dist_shape == "bimodal") {
+      # Set the coefficients
+      beta1 <- 1
+      beta2 <- 1
+      sigma <- 4
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+    } else if (dist_shape == "uniform") {
+      # Set the coefficients
+      beta1 <- 1
+      beta2 <- 1
+      sigma <- 1
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+    }
+    
+    # Perform tests
+    ks_stat <- discrete_ks_test(x, y, bins)
+    chi_sq_stat <- chi_square_test(x, y, bins)
+    
+    # P-value
+    chi_sq_p_value <- chi_sq_stat$p.value
+    ks_p_value <- ks_stat$p.value
+    #print(ks_p_value)
+    #print(chi_sq_p_value)
+    
+    # Check if null hypothesis is rejected
+    if (ks_p_value < critical_value_ks) {
+      count_ks_reject <- count_ks_reject + 1
+    }
+    if (chi_sq_p_value < critical_value_chi_sq) {
+      count_chi_sq_reject <- count_chi_sq_reject + 1
+    }
+  }
+  
+  return(c(count_ks_reject / 1000, count_chi_sq_reject / 1000))
+}
+
+# Simulations
+#N
+n = 5000
+# CASE WITH 0.05
+critical_value_ks = 0.05
+critical_value_chi_sq= 0.05
+
+
+# Define the distribution shapes
+dist_shapes <- c("right skewed", "left skewed", "bimodal", "uniform")
+
+# Define the bin sizes
+bin_sizes <- c(4, 10)
+# Initialize a data frame to store the results
+results <- data.frame()
+
+# Loop over each distribution shape
+for (dist_shape in dist_shapes) {
+  # Loop over each bin size
+  for (bins in bin_sizes) {
+    # Simulation
+    sim_results <- run_simulation(n, dist_shape, bins)
+    
+    # Data frame with the results
+    df <- data.frame(
+      "Distribution Shape" = dist_shape,
+      "Bin Size" = bins,
+      "KS Test Rejection Proportion" = sim_results[1],
+      "Chi-Square Test Rejection Proportion" = sim_results[2]
+    )
+    
+    # Append the results to the main results data frame
+    results <- rbind(results, df)
+  }
+}
+
+print(results)
+
+# CASE WITH 0.025
+critical_value_ks = 0.025
+critical_value_chi_sq= 0.025
+
+# Define the distribution shapes
+dist_shapes <- c("right skewed", "left skewed", "bimodal", "uniform")
+
+# Define the bin sizes
+bin_sizes <- c(4, 10)
+
+# Initialize a data frame to store the results
+results <- data.frame()
+
+# Loop over each distribution shape
+for (dist_shape in dist_shapes) {
+  # Loop over each bin size
+  for (bins in bin_sizes) {
+    # Run the simulation
+    sim_results <- run_simulation(n, dist_shape, bins)
+    
+    # Create a data frame with the results
+    df <- data.frame(
+      "Distribution Shape" = dist_shape,
+      "Bin Size" = bins,
+      "KS Test Rejection Proportion" = sim_results[1],
+      "Chi-Square Test Rejection Proportion" = sim_results[2]
+    )
+    
+    # Append the results to the main results data frame
+    results <- rbind(results, df)
+  }
+}
+
+print(results)
+
+#Plots
+n <- 5000
+# Set the coefficients
+# Only the right-skewed distribution is shown
+beta1 <- 0.80
+beta2 <- 0.75
+sigma <- 1
+
+x_i1 <- 3*runif(n, 0, 1) + 1
+x_i2 <- 2*runif(n, 0, 1) - 1
+e_i <- qnorm(runif(n, 0, 1))
+x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+
+x_i1 <- 3*runif(n, 0, 1) + 1
+x_i2 <- 2*runif(n, 0, 1) - 1
+e_i <- qnorm(runif(n, 0, 1))
+y <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+
+
+bins = 4
+# Binning
+if (bins == 4) {
+  x_bin <- four_categories(x)
+  y_bin <- four_categories(y)
+} else if (bins == 10) {
+  x_bin <- ten_categories(x)
+  y_bin <- ten_categories(y)
+}
+
+# Create the contingency table
+table <- table(x_bin, y_bin)
+
+# We add a small constant to avoid division by zero
+table <- table + 1e-5
+
+# Perform test
+ks_stat <- discrete_ks_test(x, y, bins)
+chi_sq_stat <- chi_square_test(x, y, bins)
+# P-value
+chi_sq_p_value <- chi_sq_stat$p.value
+ks_p_value <- ks_stat$p.value
+
+print(table)
+# Return chi-square and KS statistic
+print(chi_sq_p_value)
+print(ks_p_value)
+
+# Calculate empirical cumulative distribution function
+p = ecdf(x_bin)
+
+# Plot empirical cumulative distribution function
+plot(p, lty=2, main='Same distribution by design (right skewed)', xlim=c(1, bins+1))
+
+# Add another distribuition
+p_2 = ecdf(y_bin)
+lines(p_2, lty = 1, col='red')
+
+# Add a legend
+legend("bottomright", legend = c("Distribution 1", "Distribution 2"), lty = c(2, 1), col = c("black", "red"))
+
+n <- 5000
+# Set the coefficients
+# Only the right-skewed distribution is shown
+beta1 <- 0.80
+beta2 <- 0.75
+sigma <- 1
+
+x_i1 <- 3*runif(n, 0, 1) + 1
+x_i2 <- 2*runif(n, 0, 1) - 1
+e_i <- qnorm(runif(n, 0, 1))
+x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+
+x_i1 <- 3*runif(n, 0, 1) + 1
+x_i2 <- 2*runif(n, 0, 1) - 1
+e_i <- qnorm(runif(n, 0, 1))
+y <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+
+
+bins = 10
+# Binning
+if (bins == 4) {
+  x_bin <- four_categories(x)
+  y_bin <- four_categories(y)
+} else if (bins == 10) {
+  x_bin <- ten_categories(x)
+  y_bin <- ten_categories(y)
+}
+
+# Create the contingency table
+table <- table(x_bin, y_bin)
+
+# We add a small constant to avoid division by zero
+table <- table + 1e-5
+
+# Perform test
+ks_stat <- discrete_ks_test(x, y, bins)
+chi_sq_stat <- chi_square_test(x, y, bins)
+# P-value
+chi_sq_p_value <- chi_sq_stat$p.value
+ks_p_value <- ks_stat$p.value
+
+print(table)
+# Return chi-square and KS statistic
+print(chi_sq_p_value)
+print(ks_p_value)
+
+# Calculate empirical cumulative distribution function
+p = ecdf(x_bin)
+
+# Plot empirical cumulative distribution function
+plot(p, lty=2, main='Same distribution by design (right skewed)', xlim=c(1, bins+1))
+
+# Add another distribuition
+p_2 = ecdf(y_bin)
+lines(p_2, lty = 1, col='red')
+
+# Add a legend
+legend("bottomright", legend = c("Distribution 1", "Distribution 2"), lty = c(2, 1), col = c("black", "red"))
+
+#TABLE 2
+# Function to run Monte Carlo simulations
+run_simulation <- function(n, dist_shape, bins) {
+  # Initialize counters for null hypothesis rejections
+  count_ks_reject <- 0
+  count_chi_sq_reject <- 0
+  
+  # Run the simulations
+  for (i in 1:1000) {
+    x_i1 <- 3*runif(n, 0, 1) + 1
+    x_i2 <- 2*runif(n, 0, 1) - 1
+    e_i <- qnorm(runif(n, 0, 1))
+    
+    # Generate data according to specified distribution shape
+    if (dist_shape == "right skewed") {
+      # Set the coefficients
+      beta1 <- 0.80
+      beta2 <- 1.25
+      sigma <- 1
+      beta1_2 <- 0.75
+      beta2_2 <- 1.25
+      sigma_2 <- 1
+      
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1_2 * x_i1 + beta2_2 * x_i2 + sigma_2 * e_i
+    } else if (dist_shape == "left skewed") {
+      # Set the coefficients
+      beta1 <- 1.70
+      beta2 <- 1.25
+      sigma <- 1
+      beta1_2 <- 1.75
+      beta2_2 <- 1.25
+      sigma_2 <- 1
+      
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1_2 * x_i1 + beta2_2 * x_i2 + sigma_2 * e_i
+    } else if (dist_shape == "bimodal") {
+      # Set the coefficients
+      beta1 <- 1
+      beta2 <- 1
+      sigma <- 3.5
+      beta1_2 <- 1
+      beta2_2 <- 1
+      sigma_2 <- 4
+      
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1_2 * x_i1 + beta2_2 * x_i2 + sigma_2 * e_i
+    } else if (dist_shape == "uniform") {
+      # Set the coefficients
+      beta1 <- 1
+      beta2 <- 1.5
+      sigma <- 4
+      beta1_2 <- 1
+      beta2_2 <- 1
+      sigma_2 <- 4
+      
+      x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+      
+      x_i1 <- 3*runif(n, 0, 1) + 1
+      x_i2 <- 2*runif(n, 0, 1) - 1
+      e_i <- qnorm(runif(n, 0, 1))
+      y <- beta1_2 * x_i1 + beta2_2 * x_i2 + sigma_2 * e_i
+    }
+    
+    # Perform tests
+    ks_stat <- discrete_ks_test(x, y, bins)
+    chi_sq_stat <- chi_square_test(x, y, bins)
+    
+    # P-value
+    chi_sq_p_value <- chi_sq_stat$p.value
+    ks_p_value <- ks_stat$p.value
+    #print(ks_p_value)
+    
+    # Check if null hypothesis is rejected
+    if (ks_p_value < critical_value_ks) {
+      count_ks_reject <- count_ks_reject + 1
+    }
+    if (chi_sq_p_value < critical_value_chi_sq) {
+      count_chi_sq_reject <- count_chi_sq_reject + 1
+    }
+  }
+  
+  return(c(count_ks_reject / 1000, count_chi_sq_reject / 1000))
+}
+
+# Simulations
+#N
+n = 500
+# CASE WITH 0.05
+critical_value_ks = 0.05
+critical_value_chi_sq= 0.05
+
+
+# Define the distribution shapes
+dist_shapes <- c("right skewed", "left skewed", "bimodal", "uniform")
+
+# Define the bin sizes
+bin_sizes <- c(4, 10)
+# Initialize a data frame to store the results
+results <- data.frame()
+
+# Loop over each distribution shape
+for (dist_shape in dist_shapes) {
+  # Loop over each bin size
+  for (bins in bin_sizes) {
+    # Run the simulation
+    sim_results <- run_simulation(n, dist_shape, bins)
+    
+    # Create a data frame with the results
+    df <- data.frame(
+      "Distribution Shape" = dist_shape,
+      "Bin Size" = bins,
+      "KS Test Rejection Proportion" = sim_results[1],
+      "Chi-Square Test Rejection Proportion" = sim_results[2]
+    )
+    
+    # Append the results to the main results data frame
+    results <- rbind(results, df)
+  }
+}
+
+print(results)
+
+# CASE WITH 0.025
+critical_value_ks = 0.025
+critical_value_chi_sq= 0.025
+
+
+# Define the distribution shapes
+dist_shapes <- c("right skewed", "left skewed", "bimodal", "uniform")
+
+# Define the bin sizes
+bin_sizes <- c(4, 10)
+# Initialize a data frame to store the results
+results <- data.frame()
+
+# Loop over each distribution shape
+for (dist_shape in dist_shapes) {
+  # Loop over each bin size
+  for (bins in bin_sizes) {
+    # Run the simulation
+    sim_results <- run_simulation(n, dist_shape, bins)
+    
+    # Create a data frame with the results
+    df <- data.frame(
+      "Distribution Shape" = dist_shape,
+      "Bin Size" = bins,
+      "KS Test Rejection Proportion" = sim_results[1],
+      "Chi-Square Test Rejection Proportion" = sim_results[2]
+    )
+    
+    # Append the results to the main results data frame
+    results <- rbind(results, df)
+  }
+}
+
+print(results)
+
+#N
+n = 5000
+
+# CASE WITH 0.05
+critical_value_ks = 0.05
+critical_value_chi_sq= 0.05
+
+
+# Define the distribution shapes
+dist_shapes <- c("right skewed", "left skewed", "bimodal", "uniform")
+
+# Define the bin sizes
+bin_sizes <- c(4, 10)
+# Initialize a data frame to store the results
+results <- data.frame()
+
+# Loop over each distribution shape
+for (dist_shape in dist_shapes) {
+  # Loop over each bin size
+  for (bins in bin_sizes) {
+    # Run the simulation
+    sim_results <- run_simulation(n, dist_shape, bins)
+    
+    # Create a data frame with the results
+    df <- data.frame(
+      "Distribution Shape" = dist_shape,
+      "Bin Size" = bins,
+      "KS Test Rejection Proportion" = sim_results[1],
+      "Chi-Square Test Rejection Proportion" = sim_results[2]
+    )
+    
+    # Append the results to the main results data frame
+    results <- rbind(results, df)
+  }
+}
+
+print(results)
+
+#N
+n = 5000
+
+# CASE WITH 0.025
+critical_value_ks = 0.025
+critical_value_chi_sq= 0.025
+
+
+# Define the distribution shapes
+dist_shapes <- c("right skewed", "left skewed", "bimodal", "uniform")
+
+# Define the bin sizes
+bin_sizes <- c(4, 10)
+# Initialize a data frame to store the results
+results <- data.frame()
+
+# Loop over each distribution shape
+for (dist_shape in dist_shapes) {
+  # Loop over each bin size
+  for (bins in bin_sizes) {
+    # Run the simulation
+    sim_results <- run_simulation(n, dist_shape, bins)
+    
+    # Create a data frame with the results
+    df <- data.frame(
+      "Distribution Shape" = dist_shape,
+      "Bin Size" = bins,
+      "KS Test Rejection Proportion" = sim_results[1],
+      "Chi-Square Test Rejection Proportion" = sim_results[2]
+    )
+    
+    # Append the results to the main results data frame
+    results <- rbind(results, df)
+  }
+}
+
+print(results)
+
+# Plots
+n <- 5000
+# Set the coefficients
+# Only the right-skewed distribution is shown
+beta1 <- 0.80
+beta2 <- 1.25
+sigma <- 1
+beta1_2 <- 0.75
+beta2_2 <- 1.25
+sigma_2 <- 1
+
+x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+
+x_i1 <- 3*runif(n, 0, 1) + 1
+x_i2 <- 2*runif(n, 0, 1) - 1
+e_i <- qnorm(runif(n, 0, 1))
+y <- beta1_2 * x_i1 + beta2_2 * x_i2 + sigma_2 * e_i
+
+
+bins = 4
+# Binning
+if (bins == 4) {
+  x_bin <- four_categories(x)
+  y_bin <- four_categories(y)
+} else if (bins == 10) {
+  x_bin <- ten_categories(x)
+  y_bin <- ten_categories(y)
+}
+
+# Create the contingency table
+table <- table(x_bin, y_bin)
+
+# We add a small constant to avoid division by zero
+table <- table + 1e-5
+
+# Perform test
+ks_stat <- discrete_ks_test(x, y, bins)
+chi_sq_stat <- chi_square_test(x, y, bins)
+# p value
+chi_sq_p_value <- chi_sq_stat$p.value
+ks_p_value <- ks_stat$p.value
+
+print(table)
+# Return chi-square and KS statistic
+print(chi_sq_p_value)
+print(ks_p_value)
+
+# Calculate empirical cumulative distribution function
+p = ecdf(x_bin)
+
+# Plot empirical cumulative distribution function
+plot(p, lty=2, main='Different distribution by design (right skewed)', xlim=c(1, bins+1))
+
+# Add another distribuition
+p_2 = ecdf(y_bin)
+lines(p_2, lty = 1, col='red')
+
+# Add a legend
+legend("bottomright", legend = c("Distribution 1", "Distribution 2"), lty = c(2, 1), col = c("black", "red"))
+
+n <- 5000
+# Set the coefficients
+# Only the right-skewed distribution is shown
+beta1 <- 0.80
+beta2 <- 1.25
+sigma <- 1
+beta1_2 <- 0.75
+beta2_2 <- 1.25
+sigma_2 <- 1
+
+x <- beta1 * x_i1 + beta2 * x_i2 + sigma * e_i
+
+x_i1 <- 3*runif(n, 0, 1) + 1
+x_i2 <- 2*runif(n, 0, 1) - 1
+e_i <- qnorm(runif(n, 0, 1))
+y <- beta1_2 * x_i1 + beta2_2 * x_i2 + sigma_2 * e_i
+
+
+bins = 10
+# Binning
+if (bins == 4) {
+  x_bin <- four_categories(x)
+  y_bin <- four_categories(y)
+} else if (bins == 10) {
+  x_bin <- ten_categories(x)
+  y_bin <- ten_categories(y)
+}
+
+# Create the contingency table
+table <- table(x_bin, y_bin)
+
+# We add a small constant to avoid division by zero
+table <- table + 1e-5
+
+# Perform test
+ks_stat <- discrete_ks_test(x, y, bins)
+chi_sq_stat <- chi_square_test(x, y, bins)
+# P-value
+chi_sq_p_value <- chi_sq_stat$p.value
+ks_p_value <- ks_stat$p.value
+
+print(table)
+# Return chi-square and KS statistic
+print(chi_sq_p_value)
+print(ks_p_value)
+
+# Calculate empirical cumulative distribution function
+p = ecdf(x_bin)
+
+# Plot empirical cumulative distribution function
+plot(p, lty=2, main='Different distribution by design (right skewed)', xlim=c(1, bins+1))
+
+# Add another distribuition
+p_2 = ecdf(y_bin)
+lines(p_2, lty = 1, col='red')
+
+# Add a legend
+legend("bottomright", legend = c("Distribution 1", "Distribution 2"), lty = c(2, 1), col = c("black", "red"))
